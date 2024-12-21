@@ -1,8 +1,11 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import BlogSerializer
+from .serializers import BlogSerializer, TagSerializer, CategorySerializer
 from .models import Blog
+from rest_framework.permissions import IsAdminUser
+from django.db.models import Q
+from rest_framework.generics import GenericAPIView
 
 
 # Create your views here.
@@ -48,3 +51,41 @@ class BlogDeleteView(APIView):
         blog = Blog.objects.get(id=kwargs['id'])
         blog.delete()
         return Response(status=204)
+    
+# TagCreateView to handle the creation of a new Tag via an API request
+class TagCreateView(APIView):
+
+    # Handle POST requests to create a new tag
+    def post(self, request, *args, **kwargs):
+        serializer = TagSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    
+# CategoryCreateView to handle the creation of a new Category via an API request
+class CategoryCreateView(APIView):
+    permission_classes = [IsAdminUser]
+
+    # Handle POST requests to create a new category by admin user
+    def post(self, request, *args, **kwargs):
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+    
+class SearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        query = request.query_params.get('q', '')
+        blogs = Blog.objects.filter(Q(Title__icontains=query) | Q(Content__icontains=query)
+                                    | Q(tag__name__icontains=query) | Q(Author__username__icontains=query))
+        serializer = BlogSerializer(blogs, many=True)
+        return Response(serializer.data, status=200)
+    
+# class FilterView(APIView):
+#     def get(self, request, *args, **kwargs):
+#         category = request.query_params.get('category', '')
+#         blogs = Blog.objects.filter(category__name=category)
+#         serializer = BlogSerializer(blogs, many=True)
+#         return Response(serializer.data, status=200)
