@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import BlogSerializer, TagSerializer, CategorySerializer
+from .serializers import BlogSerializer, CategorySerializer, TagSerializer
 from .models import Blog
 from rest_framework.permissions import IsAdminUser
 from django.db.models import Q
@@ -52,7 +52,7 @@ class BlogDeleteView(APIView):
         blog.delete()
         return Response(status=204)
     
-# TagCreateView to handle the creation of a new Tag via an API request
+#TagCreateView to handle the creation of a new Tag via an API request
 class TagCreateView(APIView):
 
     # Handle POST requests to create a new tag
@@ -63,7 +63,7 @@ class TagCreateView(APIView):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
     
-# CategoryCreateView to handle the creation of a new Category via an API request
+#CategoryCreateView to handle the creation of a new Category via an API request
 class CategoryCreateView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -83,9 +83,10 @@ class SearchView(APIView):
         serializer = BlogSerializer(blogs, many=True)
         return Response(serializer.data, status=200)
     
-# class FilterView(APIView):
-#     def get(self, request, *args, **kwargs):
-#         category = request.query_params.get('category', '')
-#         blogs = Blog.objects.filter(category__name=category)
-#         serializer = BlogSerializer(blogs, many=True)
-#         return Response(serializer.data, status=200)
+class BlogFilterView(APIView):
+    def get(self, request, *args, **kwargs):
+        category = request.query_params.get('category', '')
+        author = request.query_params.get('author', '')
+        blogs = Blog.objects.filter(Category__name=category, Author__username=author)
+        serializer = BlogSerializer(blogs, many=True)
+        return Response(serializer.data, status=200)
