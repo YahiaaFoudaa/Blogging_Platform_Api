@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import User
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
 
 # Serializer for user data (id, username, email, bio, and profile_pic).
 class UserSerializer(serializers.ModelSerializer):
@@ -36,13 +38,27 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     
 # Serializer for user login, validating the username and password.
 class UserLoginSerializer(serializers.Serializer):
+    # Fields: username, password (write-only), and token (read-only)
     username = serializers.CharField()
-    password = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+    token = serializers.CharField(read_only=True)
 
-    # Custom validation to check if the user exists based on the username.
+    # Custom validation checks if credentials are valid, user is active, 
+    # and generates a token for successful login.
     def validate(self, data):
-        user = User.objects.filter(username=data['username']).first()
-        if not user:
-            raise serializers.ValidationError("User does not exist")
-        return data
+        username = data.get('username')
+        password = data.get('password')
+
+        if username and password:
+            user = authenticate(username=username, password=password)
+            if not user:
+                raise serializers.ValidationError("Invalid credentials")
+            if not user.is_active:
+                raise serializers.ValidationError("User is inactive")
+            token, created = Token.objects.get_or_create(user=user)
+            data['token'] = token.key
+            data['user'] = user
+            return data
+        else:
+            raise serializers.ValidationError("Username and password are required")
 

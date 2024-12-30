@@ -18,7 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+    # Admin interface at /admin/
     path('admin/', admin.site.urls),
+    # Includes URLs for the 'accounts' app (user-related views).
     path('accounts/', include('accounts.urls')),
+    # Includes URLs for the 'blog' app (blog-related views).
     path('blog/', include('blog.urls')),
 ]
